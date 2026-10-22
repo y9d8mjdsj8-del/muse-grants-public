@@ -1,4 +1,4 @@
-import type { NoticeKind } from "./types";
+import type { Notice, NoticeKind } from "./types";
 
 /** 출처 기준 1차 분류 */
 const SOURCE_KIND: Record<string, NoticeKind> = {
@@ -33,5 +33,24 @@ export function extraTags(title: string, source?: string): string[] {
   if (/대관료/.test(title)) tags.push("대관");
   if (/(해외|국제|international)/i.test(title)) tags.push("해외");
   if (/(청년|39세)/.test(title)) tags.push("청년");
-  return tags;
+  return [...tags, ...businessTopics({ title, org: source ?? "" })];
+}
+
+/** 분야는 지원 자격 판정이 아닌 검색용 분류이며 여러 분야에 동시에 속할 수 있다. */
+export const BUSINESS_TOPICS = ["뷰티", "코트라", "예경", "문체부", "박람회 지원", "기업부설연구소", "디자인", "여성기업"] as const;
+export type BusinessTopic = typeof BUSINESS_TOPICS[number];
+const TOPIC_RULES: [BusinessTopic, RegExp][] = [
+  ["뷰티", /뷰티|화장품|미용|코스메틱|cosmetic|beauty/i],
+  ["코트라", /코트라|KOTRA|대한무역투자진흥공사/i],
+  ["예경", /예술경영지원센터|아트코리아랩|예경/],
+  ["문체부", /문화체육관광부|문체부/],
+  ["박람회 지원", /박람회|전시회|해외\s*전시|공동관|한국관|부스|엑스포|expo|trade\s*fair/i],
+  ["기업부설연구소", /기업\s*부설\s*연구소|연구\s*전담\s*부서|연구개발|R\s*&\s*D|기술개발|산업기술진흥협회/i],
+  ["디자인", /디자인|디자이너|design|패키징|브랜딩/i],
+  ["여성기업", /여성\s*(기업|창업|경제인|CEO|대표)|여경협|WBIZ/i],
+];
+type TopicNotice = Pick<Notice, "title" | "org"> & Partial<Pick<Notice, "sources" | "summary" | "tags" | "fields">>;
+export function businessTopics(n: TopicNotice): BusinessTopic[] {
+  const text = [n.title, n.org, n.summary, ...(n.sources ?? []), ...(n.fields ?? [])].join(" ");
+  return TOPIC_RULES.filter(([label, re]) => n.tags?.includes(label) || re.test(text)).map(([label]) => label);
 }

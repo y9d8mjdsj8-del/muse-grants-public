@@ -132,6 +132,8 @@ export function recommendNotices(notices: Notice[], entities: Entity[], keywords
       const business = e.type === "개인사업자" || e.type === "법인";
       if (e.type === "개인사업자" && /법인(?:사업자|기업)?\s*(?:만|한정)|개인사업자\s*(?:제외|불가)/.test(text)) continue;
       const profile = [e.profile?.headline, e.profile?.bio, e.profile?.notes, ...(e.profile?.genres ?? [])].join(" ");
+      // Avoid beauty retouching / sound design notices aimed at broadcast producers.
+      if (/방송영상독립제작사/.test(text) && /필수|주관기관/.test(text) && !/방송영상|독립제작사|후반작업/.test(profile)) continue;
       const interests = businessTopics({ title: profile, org: "" });
       const collaborationFirst = /협업|콜라보|공동기획/.test(profile);
       if (business && collaborationFirst && (n.kind === "residency" || /개인\s*작가|예술인\s*개인|개인\s*예술가/.test(n.title)) && !topics.includes("예술·브랜드 협업")) continue;
@@ -139,7 +141,8 @@ export function recommendNotices(notices: Notice[], entities: Entity[], keywords
       const keyHits = matchedKeywords(n, keywords.include);
       if (!hits.length && !keyHits.length) continue;
       const weights: Record<string, number> = { "뷰티": 45, "예술·브랜드 협업": 35, "수출바우처": 32, "디자인": 28, "박람회 지원": 24, "대출·융자": 18, "자금지원": 18, "기업부설연구소": 15, "여성기업": 12, "코트라": 10, "예경": 8, "문체부": 6 };
-      let score = hits.reduce((sum, t) => sum + (weights[t] ?? 10), 0) + Math.min(30, keyHits.length * 10);
+      const titleTopics = businessTopics({ title: n.title, org: "" });
+      let score = hits.reduce((sum, t) => sum + (weights[t] ?? 10) * (titleTopics.includes(t) ? 1 : 0.35), 0) + Math.min(30, keyHits.length * 10);
       const reasons = hits.sort((a, b) => (weights[b] ?? 0) - (weights[a] ?? 0)).slice(0,2).map((t) => `관심 분야: ${TOPIC_LABELS[t] ?? t}`);
       if (keyHits.length) reasons.push(`내 키워드: ${keyHits.slice(0,2).join("·")}`);
       const checks = ["개인·기업 대상과 세부 신청 요건 확인"];

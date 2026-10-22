@@ -1,7 +1,8 @@
+import { normalizeSupabaseUrl } from "@/lib/supabase-url";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Notice } from "@muse/core";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const url = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 /** 환경변수가 없으면 null → 데모 모드 */

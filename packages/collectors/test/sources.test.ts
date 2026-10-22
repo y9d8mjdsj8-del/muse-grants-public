@@ -167,11 +167,16 @@ for (const title of ['수출 바우처 참여기업 모집', '수출지원기반
   assert.deepEqual(businessTopics({ title, org: '' }), ['수출바우처']);
 }
 assert.deepEqual(businessTopics({ title: '수출 상담회', org: '' }), [], '일반 수출 사업을 바우처로 오분류하지 않는다');
+assert.deepEqual(businessTopics({ title: '소상공인 정책자금 융자', org: '' }), ['대출·융자']);
+assert.deepEqual(businessTopics({ title: '소상공인 특례보증', org: '' }), ['대출·융자']);
+assert.deepEqual(businessTopics({ title: '경영개선 사업비 지원', org: '' }), ['자금지원']);
+assert.deepEqual(businessTopics({ title: '중소기업 이차보전 지원', org: '' }), ['대출·융자', '자금지원']);
+assert.deepEqual(businessTopics({ title: '도서 대여 및 공간 대관 안내', org: '' }), []);
 assert.deepEqual(businessTopics({ title: BUSINESS_TOPICS.join(' '), org: '' }), [...BUSINESS_TOPICS]);
 const fetched: string[] = [];
 await bizinfo.list({ ...ctx, fetchText: async (url) => { fetched.push(url); return businessRow; } });
-assert.equal(fetched.length, 16, '검색조건별 검색 후 짧은 페이지에서 중단');
-for (const keyword of ['수출바우처', '수출지원기반활용']) {
+assert.equal(fetched.length, 28, '검색조건별 검색 후 짧은 페이지에서 중단');
+for (const keyword of ['수출바우처', '수출지원기반활용', '대출', '융자', '정책자금', '특례보증', '자금', '지원금', '사업비 지원']) {
   assert(fetched.some((u) => new URL(u).searchParams.get('keyword') === keyword));
 }
 assert(fetched.every((u) => new URL(u).searchParams.get('condition1') === 'AND'));

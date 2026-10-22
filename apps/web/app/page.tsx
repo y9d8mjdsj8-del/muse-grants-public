@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Hash, Inbox, Keyboard, UserPlus, LayoutGrid, LayoutList, Plus, Search, SlidersHorizontal, Table2, X } from "lucide-react";
-import { ALL_KINDS, matchesTopicSelection, bestRegionFit, isStartup, daysLeft, fitTotal, isOpen, KIND_LABEL, matchedKeywords, sortByDeadline, type Notice, type NoticeKind } from "@muse/core";
+import { ALL_KINDS, recommendNotices, koreaCalendarDate, matchesTopicSelection, bestRegionFit, isStartup, daysLeft, fitTotal, isOpen, KIND_LABEL, matchedKeywords, sortByDeadline, type Notice, type NoticeKind } from "@muse/core";
 import { useApp } from "@/lib/store";
 import { NoticeCard, NoticeTable, PosterCard } from "@/components/NoticeCard";
 import { NoticeDetail } from "@/components/NoticeDetail";
@@ -30,6 +30,12 @@ export default function FeedPage() {
   const [tab, setTab] = usePref<Tab>("mg-tab", "all");
   const [view, setView] = usePref<View>("mg-view", "list");
   const [f, setF] = usePref<Filters>("mg-filters", DEFAULT_FILTERS);
+  const [recommendationNow, setRecommendationNow] = useState(() => new Date());
+  const [showRecommendations, setShowRecommendations] = useState(true);
+  useEffect(() => {
+    const timer = setInterval(() => setRecommendationNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
   const [quick, setQuick] = useState<Quick>("all");
   const [q, setQ] = useState("");
   const [selId, setSelId] = useState<string | null>(null);
@@ -49,6 +55,11 @@ export default function FeedPage() {
   const mSearchRef = useRef<HTMLInputElement>(null);
 
   const base = useMemo(() => notices.filter((n) => enabledKinds.includes(n.kind) && !state.hidden[n.id]), [notices, enabledKinds, state.hidden]);
+  const recommended = useMemo(() => recommendNotices(base.filter((n) => !state.deleted[n.id]), entities, keywords, recommendationNow), [base, state.deleted, entities, keywords, recommendationNow]);
+  const topRecommended = recommended.slice(0, 3);
+  const urgentRecommended = recommended.filter((r) => r.days !== null && r.days <= 7 && !r.upcoming);
+  const unseenRecommended = topRecommended.filter((r) => !state.seen[r.notice.id]).length;
+  const savedDue = base.filter((n) => state.starred[n.id] && !state.deleted[n.id]).map((n) => ({ n, days: daysLeft(n.deadline, koreaCalendarDate(recommendationNow)) })).filter((r) => r.days !== null && r.days >= 0 && r.days <= 7).sort((a,b) => a.days! - b.days!);
   const open = base.filter((n) => isOpen(n));
   const counts: Record<Tab, number> = { all: 0, grant: 0, service: 0, edu: 0, venue: 0, residency: 0 };
   open.forEach((n) => { if (!state.seen[n.id]) { counts[n.kind]++; counts.all++; } });
@@ -249,6 +260,29 @@ export default function FeedPage() {
               <Button variant="primary" onClick={() => setAdding(true)}><Plus size={17} /> 공고 추가</Button>
             </div>
           </div>
+          {ready && <section aria-label="먼저 살펴볼 공고" className="mt-5 rounded-2xl border border-brand/30 bg-brand-soft/30 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div><h2 className="text-[16px] font-bold">먼저 살펴볼 공고</h2><p className="text-[12px] text-mute mt-1">등록한 프로필과 관심 키워드 기준 · 검색·필터 선택과 별도로 보여요</p></div>
+              <button className="text-[12px] shrink-0 underline underline-offset-2" aria-expanded={showRecommendations} onClick={() => setShowRecommendations(!showRecommendations)}>{showRecommendations ? "추천 접기" : "추천 펼치기"}</button>
+            </div>
+            {showRecommendations && <>
+              <p className="text-[12px] mt-3 text-brand-ink">아직 안 본 추천 {unseenRecommended}건 · 추천 중 7일 이내 마감 {urgentRecommended.length}건 · 저장한 공고 7일 이내 마감 {savedDue.length}건</p>
+              <p className="text-[12px] text-mute mt-1">사이트 안에서 갱신되는 안내예요. 지원 가능·선정 확정이나 외부 푸시 알림은 아닙니다.</p>
+              {!entities.length ? <Link className="block mt-3 text-[13px] underline" href="/settings#entities">지원 주체를 등록하면 추천을 볼 수 있어요 →</Link>
+                : !topRecommended.length ? <p className="mt-3 text-[13px]">지금은 추천 근거가 충분한 공고가 없어요. <Link className="underline" href="/settings">프로필·관심 키워드 확인 →</Link></p>
+                : <div className="grid gap-3 mt-3 md:grid-cols-3">{topRecommended.map((r) => <article key={r.notice.id} className="rounded-xl bg-surface border border-line p-3 flex flex-col gap-2">
+                  <div className="flex justify-between gap-2 text-[11px] text-mute"><span>{r.entityName} 기준</span><b className={r.days !== null && r.days <= 7 ? "text-amber" : ""}>{r.upcoming ? "접수 예정" : r.days === null ? "마감 확인 필요" : r.days === 0 ? "오늘 마감" : `D-${r.days}`}</b></div>
+                  <button onClick={() => openNotice(r.notice)} className="text-left text-[14px] font-bold leading-snug hover:underline">{r.notice.title}</button>
+                  <p className="text-[11px] text-mute">{r.notice.org}</p>
+                  <p className="text-[12px] text-brand-ink">{r.reasons.join(" · ")}</p>
+                  <details className="text-[12px] text-mute"><summary className="cursor-pointer">확인할 조건 {r.checks.length}개</summary><ul className="mt-1 list-disc pl-4">{r.checks.map((c) => <li key={c}>{c}</li>)}</ul></details>
+                  <div className="mt-auto flex gap-2 pt-1"><button className="text-[12px] font-semibold underline" onClick={() => openNotice(r.notice)}>공고 살펴보기</button><button aria-label={`${r.notice.title} ${state.starred[r.notice.id] ? "저장 해제" : "저장"}`} aria-pressed={!!state.starred[r.notice.id]} className="ml-auto text-[12px]" onClick={() => toggleStar(r.notice.id)}>{state.starred[r.notice.id] ? "★ 저장됨" : "☆ 저장"}</button></div>
+                </article>)}</div>}
+              {urgentRecommended.length > 0 && <details className="mt-3 text-[12px]"><summary className="cursor-pointer font-semibold">추천 공고 마감 안내 보기 ({urgentRecommended.length}건)</summary><ul className="mt-2 space-y-2">{urgentRecommended.map((r) => <li key={r.notice.id}><button className="text-left underline" onClick={() => openNotice(r.notice)}>D-{r.days} · {r.notice.title}</button></li>)}</ul></details>}
+              {savedDue.length > 0 && <details className="mt-3 text-[12px]"><summary className="cursor-pointer font-semibold">저장한 공고 마감 안내 보기 ({savedDue.length}건)</summary><ul className="mt-2 space-y-2">{savedDue.map(({ n, days }) => <li key={n.id}><button className="text-left underline" onClick={() => openNotice(n)}>D-{days} · {n.title}</button></li>)}</ul></details>}
+              <Link href="/settings" className="inline-block mt-3 text-[12px] underline text-mute">추천 기준이 되는 프로필·키워드 수정 →</Link>
+            </>}
+          </section>}
           <div className="hidden lg:flex items-end gap-3 mt-5 border-b border-line">
             <div role="tablist" aria-label="공고 종류" className="flex gap-1 min-w-0 overflow-x-auto scrollbar-none">{tabButtons(false)}</div>
             <div className="ml-auto shrink-0 hidden 2xl:flex items-center gap-1.5 pb-1.5">

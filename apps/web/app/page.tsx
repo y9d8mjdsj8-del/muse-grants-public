@@ -2,13 +2,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Hash, Inbox, Keyboard, UserPlus, LayoutGrid, LayoutList, Plus, Search, SlidersHorizontal, Table2, X } from "lucide-react";
-import { ALL_KINDS, bestRegionFit, isStartup, daysLeft, fitTotal, isOpen, KIND_LABEL, matchedKeywords, sortByDeadline, type Notice, type NoticeKind } from "@muse/core";
+import { ALL_KINDS, businessTopics, bestRegionFit, isStartup, daysLeft, fitTotal, isOpen, KIND_LABEL, matchedKeywords, sortByDeadline, type Notice, type NoticeKind } from "@muse/core";
 import { useApp } from "@/lib/store";
 import { NoticeCard, NoticeTable, PosterCard } from "@/components/NoticeCard";
 import { NoticeDetail } from "@/components/NoticeDetail";
 import { AddNotice } from "@/components/AddNotice";
 import { CollectNow } from "@/components/CollectNow";
-import { activeCount, DEFAULT_FILTERS, FilterBar, FilterSheet, type Filters } from "@/components/FeedFilters";
+import { activeCount, DEFAULT_FILTERS, FilterBar, FilterSheet, TopicFilters, type Filters } from "@/components/FeedFilters";
 import { Button, cx, Empty, IconButton, Segmented, Tip } from "@/components/ui";
 import { usePref } from "@/lib/prefs";
 
@@ -66,6 +66,7 @@ export default function FeedPage() {
     const l = inTab.filter((n) => {
       if (!f.showClosed && !isOpen(n)) return false;
       if (q && !`${n.title} ${n.org} ${n.summary ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
+      if (f.topic && f.topic !== "all" && !businessTopics(n).includes(f.topic)) return false;
       if (f.region !== "all" && n.region !== f.region) return false;
       if (f.overseas && !n.overseas) return false;
       if (f.domestic && n.overseas) return false;
@@ -314,6 +315,7 @@ export default function FeedPage() {
             </Link>
           )}
 
+          <TopicFilters f={f} set={setF} />
           {/* 목록 */}
           <div className="mt-4 lg:mt-5">
             {!ready ? (

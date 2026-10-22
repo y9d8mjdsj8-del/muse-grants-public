@@ -226,3 +226,7 @@ assert.equal(recommendNotices([recNotice('a','뷰티 지원')], [recEntity], { .
 assert.equal(recommendNotices([recNotice('a','뷰티 지원'), recNotice('b','뷰티 지원')], [recEntity], recKeys, recNow).length, 1);
 assert.equal(recommendNotices([recNotice('a','일반 안내')], [recEntity], recKeys, recNow).length, 0);
 console.log('recommendation boundaries and Korea dates passed');
+
+assert.equal(recommendNotices([recNotice('broadcast', '방송영상콘텐츠 후반작업지원', { summary: '방송영상독립제작사 신고필증 필수. 뷰티, 사운드 디자인 지원' })], [recEntity], recKeys, recNow).length, 0);
+const titleFirst = recommendNotices([recNotice('incidental', '종합 지원', { summary: '뷰티 지원' }), recNotice('direct', '향료 개발 지원')], [recEntity], recKeys, recNow);
+assert.equal(titleFirst[0].notice.id, 'direct', '제목의 직접 관련성을 우선');

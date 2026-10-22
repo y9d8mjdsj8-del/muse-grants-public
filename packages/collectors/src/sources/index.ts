@@ -12,6 +12,7 @@ import { botame } from "./botame";
 import { g2b } from "./g2b";
 import { kocca } from "./kocca";
 import { eduKocca } from "./eduKocca";
+import { bizinfo, kotra, wbiz } from "./business";
 
 /** MVP 수집 대상 (PROJECT.md 18장 2단계) */
-export const COLLECTORS: Collector[] = [artnuri, artnuriResidence, kgo, kofice, kocca, ncas, gokams, botame, g2b, kstartup, hrdArko, artmore, eduKocca];
+export const COLLECTORS: Collector[] = [bizinfo, kotra, wbiz, artnuri, artnuriResidence, kgo, kofice, kocca, ncas, gokams, botame, g2b, kstartup, hrdArko, artmore, eduKocca];

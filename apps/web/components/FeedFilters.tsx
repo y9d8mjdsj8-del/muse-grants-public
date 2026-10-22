@@ -35,6 +35,7 @@ export function TopicFilters({ f, set }: { f: Filters; set(f: Filters): void }) 
     <p className="text-[12px] text-mute mt-2">분야 분류는 지원 자격 판정이 아니에요. 개인사업자 가능 여부, 소재지, 여성기업 확인서·연구소 보유 요건은 원문에서 확인해 주세요.</p>
     {f.topic === "기업부설연구소" && <p className="text-[12px] text-mute mt-1">연구소 설립·연구개발 공고를 함께 보여요. 연구소가 없어도 검토할 수 있는 사업이 있으니 개별 요건을 확인해 주세요.</p>}
     {f.topic === "여성기업" && <p className="text-[12px] text-mute mt-1">확인서가 필요한 사업과 여성 창업·교육 공고를 함께 보여요. 확인서 미보유만으로 공고를 숨기지 않아요.</p>}
+    {f.topic === "수출바우처" && <p className="text-[12px] text-mute mt-1">수출 실적만으로 지원 가능 여부가 확정되지는 않아요. 공고의 실적 기준연도·인정금액·증빙, 업종, 기업 규모, 자부담과 중복지원 조건을 확인해 주세요.</p>}
   </section>;
 }
 

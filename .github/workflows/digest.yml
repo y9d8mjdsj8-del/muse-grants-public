@@ -1,5 +1,8 @@
 name: 지원사업 이메일
 on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/digest.yml']
   schedule:
     - cron: '17 23 * * *' # 08:17 KST; GitHub may delay scheduled runs
   workflow_dispatch:
@@ -44,6 +47,17 @@ jobs:
         env:
           TEST_EMAIL: ${{ inputs.test_email }}
           DRY_RUN: ${{ inputs.dry_run }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          DIGEST_USER_ID: ${{ secrets.DIGEST_USER_ID }}
+          DIGEST_TO: ${{ secrets.DIGEST_TO }}
+          DIGEST_FROM: ${{ secrets.DIGEST_FROM }}
+          DIGEST_SITE_URL: ${{ vars.DIGEST_SITE_URL }}
+      - name: Verify stored profile and digest selection without sending
+        if: inputs.test_email != true && inputs.dry_run != true
+        run: pnpm --filter @muse/collectors exec tsx src/send-digest.ts --dry
+        env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}

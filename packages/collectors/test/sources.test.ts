@@ -163,9 +163,16 @@ assert.equal(wb[0].deadline, '2026-10-31');
 assert.deepEqual(businessTopics({ title: '연구개발 지원', org: '' }), ['기업부설연구소']);
 assert.deepEqual(businessTopics({ title: '다른 사업', org: '', fields: ['기업부설연구소'] }), ['기업부설연구소']);
 assert.deepEqual(businessTopics({ title: '일반 공지', org: '' }), []);
+for (const title of ['수출 바우처 참여기업 모집', '수출지원기반활용사업 모집', 'Export Voucher']) {
+  assert.deepEqual(businessTopics({ title, org: '' }), ['수출바우처']);
+}
+assert.deepEqual(businessTopics({ title: '수출 상담회', org: '' }), [], '일반 수출 사업을 바우처로 오분류하지 않는다');
 assert.deepEqual(businessTopics({ title: BUSINESS_TOPICS.join(' '), org: '' }), [...BUSINESS_TOPICS]);
 const fetched: string[] = [];
 await bizinfo.list({ ...ctx, fetchText: async (url) => { fetched.push(url); return businessRow; } });
-assert.equal(fetched.length, 14, '검색조건별 검색 후 짧은 페이지에서 중단');
+assert.equal(fetched.length, 16, '검색조건별 검색 후 짧은 페이지에서 중단');
+for (const keyword of ['수출바우처', '수출지원기반활용']) {
+  assert(fetched.some((u) => new URL(u).searchParams.get('keyword') === keyword));
+}
 assert(fetched.every((u) => new URL(u).searchParams.get('condition1') === 'AND'));
 console.log('business sources and topic tests passed');

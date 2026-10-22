@@ -5,12 +5,27 @@ import { selectDigest, renderDigest } from './digest';
 const required = (name: string) => { const v = process.env[name]?.trim(); if (!v) throw new Error(`Missing ${name}`); return v; };
 const checked = <T>(r: { data: T; error: unknown }, label: string): T => { if (r.error) throw new Error(`Database operation failed: ${label}`); return r.data; };
 async function main() {
-  const userId = required('DIGEST_USER_ID');
-  if (!/^[0-9a-f-]{36}$/i.test(userId)) throw new Error('Invalid DIGEST_USER_ID');
   const to = required('DIGEST_TO');
   if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(to)) throw new Error('DIGEST_TO must be one email address');
   const from = required('DIGEST_FROM');
   const key = required('RESEND_API_KEY');
+  // Explicit test delivery never reads profiles or advances the digest cursor.
+  if (process.argv.includes('--test')) {
+    if (process.argv.includes('--dry')) { console.log('Test configuration valid; no email sent.'); return; }
+    const response = await fetch('https://api.resend.com/emails', {
+      method:'POST', headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json',
+        'Idempotency-Key':`muse-connection-test/${todayISO(koreaCalendarDate())}`},
+      body:JSON.stringify({from,to:[to],subject:'[지원사업] MUSE Grants · 이메일 연결 테스트',
+        html:'<h2>MUSE Grants 이메일 연결 테스트</h2><p>이 메일은 서버 발송 연결 확인용입니다.</p><p>정기 알림은 별도 활성화 후 새 추천과 저장한 공고의 마감 알림을 하루 최대 한 통으로 보냅니다.</p>'}),
+      signal:AbortSignal.timeout(30000)
+    });
+    if (!response.ok) throw new Error(`Test email provider returned HTTP ${response.status}`);
+    const result = await response.json() as {id?:string};
+    if (!result.id) throw new Error('Provider did not return a test email ID.');
+    console.log('Test email accepted by provider; confirm delivery in recipient mailbox.'); return;
+  }
+  const userId = required('DIGEST_USER_ID');
+  if (!/^[0-9a-f-]{36}$/i.test(userId)) throw new Error('Invalid DIGEST_USER_ID');
   const db = createClient(new URL(required('SUPABASE_URL')).origin, required('SUPABASE_SERVICE_ROLE_KEY'), { db: { schema: 'grants' }, auth: { persistSession: false } });
   const now = new Date(); const cutoff = now.toISOString(); const day = todayISO(koreaCalendarDate(now));
   const dry = process.argv.includes('--dry');

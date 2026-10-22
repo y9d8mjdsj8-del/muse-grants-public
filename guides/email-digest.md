@@ -35,3 +35,8 @@ GitHub 예약 작업이 중단되거나 지연되면 알림도 지연되며, 지
 
 검증: `pnpm --filter @muse/collectors exec tsx test/digest.test.ts`
 실데이터 발송 없는 점검: `pnpm --filter @muse/collectors exec tsx src/send-digest.ts --dry`
+
+## 초기 연결 검증
+워크플로 파일을 main에서 변경하면 활성화된 설정으로 한 번 실행하고, 이어서 발송 없는 프로필·선별 검증을 수행합니다.
+수동 실행의 test_email은 별도 테스트 메일 전용입니다. dry_run을 해제해야 실제 발송되며 정기 발송 기준 시각은 바꾸지 않습니다.
+테스트 성공은 메일 서비스 접수를 뜻합니다. 수신함 도착 및 해당 수신 계정의 Gmail 필터 적용은 별도로 확인하세요.

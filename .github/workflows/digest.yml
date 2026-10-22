@@ -1,0 +1,42 @@
+name: 지원사업 이메일
+on:
+  schedule:
+    - cron: '17 23 * * *' # 08:17 KST; GitHub may delay scheduled runs
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '발송 없이 점검'
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: email-digest
+  cancel-in-progress: false
+jobs:
+  digest:
+    if: vars.EMAIL_DIGEST_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @muse/collectors exec tsx test/digest.test.ts
+      - run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            pnpm --filter @muse/collectors exec tsx src/send-digest.ts --dry
+          else
+            pnpm --filter @muse/collectors exec tsx src/send-digest.ts
+          fi
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          DIGEST_USER_ID: ${{ secrets.DIGEST_USER_ID }}
+          DIGEST_TO: ${{ secrets.DIGEST_TO }}
+          DIGEST_FROM: ${{ secrets.DIGEST_FROM }}
+          DIGEST_SITE_URL: ${{ vars.DIGEST_SITE_URL }}

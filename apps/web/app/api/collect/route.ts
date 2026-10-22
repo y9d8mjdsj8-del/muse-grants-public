@@ -1,3 +1,4 @@
+import { normalizeSupabaseUrl } from "@/lib/supabase-url";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
   if (!g) return NextResponse.json({ error: "바로 수집 기능이 아직 설정되지 않았어요" }, { status: 501 });
 
   // 로그인한 사용자인지 확인 (체험 모드·외부 요청 막기)
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!url || !anon || !token) return NextResponse.json({ error: "로그인이 필요해요" }, { status: 401 });

@@ -197,3 +197,32 @@ assert.deepEqual(businessTopics({ title: '예술가와 기업의 협업', org: '
 assert.deepEqual(businessTopics({ title: '단독 작가 공모', org: '' }), []);
 assert.deepEqual(businessTopics({ title: '일반 물류 협업', org: '' }), []);
 console.log('grouped discovery filters passed');
+
+const { recommendNotices, koreaCalendarDate } = await import('@muse/core');
+const recNow = new Date('2026-10-21T16:00:00Z'); // Korea: Oct 22 01:00
+assert.equal(koreaCalendarDate(recNow).getDate(), 22);
+const recEntity = { id: 'test-entity', name: '테스트 사업자', short: '테스트', type: '개인사업자' as const, region: '서울', residence: { sido: '서울', sigungu: '송파구' }, documents: [], profile: { notes: '뷰티 향료 디자인 여성기업 수출바우처 예술 협업 대출 자금지원에 관심' } };
+const recKeys = { include: [], exclude: [], regions: [], kinds: ['grant' as const] };
+const recNotice = (id: string, title: string, rest: Partial<Notice> = {}): Notice => ({ id, title, kind: 'grant', org: '테스트기관', region: '전국', sources: [], fields: [], tags: [], url: 'https://example.org/' + id, deadline: '2026-10-25', checkedAt: '', ...rest });
+const recs = recommendNotices([
+  recNotice('good', '뷰티 패키징 디자인 지원'),
+  recNotice('other-district', '[서울] 은평구 뷰티 자금지원'),
+  recNotice('other-city', '[인천] 뷰티 해외 박람회', { overseas: true }),
+  recNotice('closed', '뷰티 디자인 지원', { deadline: '2026-10-21' }),
+  recNotice('closed-hour', '뷰티 디자인 지원', { deadline: '2026-10-22', applyEnd: '2026-10-22 00:30' }),
+  recNotice('no', '뷰티 디자인 지원', { analysis: { verdicts: [{ entityId: 'test-entity', status: 'no' }], by: 'manual', analyzedAt: '' } }),
+  recNotice('corp', '법인기업만 뷰티 디자인 지원'),
+  recNotice('solo', '개인 작가 뷰티 창작 지원', { kind: 'residency' }),
+  recNotice('women', '여성기업 뷰티 디자인 지원'),
+  recNotice('unknown', '뷰티 디자인 상시 지원', { deadline: null }),
+  recNotice('future', '뷰티 디자인 차기 지원', { applyStart: '2026-10-24' }),
+], [recEntity], recKeys, recNow);
+assert.deepEqual(new Set(recs.map((r) => r.notice.id)), new Set(['good', 'women', 'unknown', 'future']));
+assert(recs.find((r) => r.notice.id === 'women')!.checks.some((c) => c.includes('확인서')));
+assert(recs.find((r) => r.notice.id === 'unknown')!.checks.some((c) => c.includes('마감일')));
+assert(recs.find((r) => r.notice.id === 'future')!.upcoming);
+assert.equal(recommendNotices([recNotice('a','뷰티 지원')], [], recKeys, recNow).length, 0);
+assert.equal(recommendNotices([recNotice('a','뷰티 지원')], [recEntity], { ...recKeys, exclude: ['뷰티'] }, recNow).length, 0);
+assert.equal(recommendNotices([recNotice('a','뷰티 지원'), recNotice('b','뷰티 지원')], [recEntity], recKeys, recNow).length, 1);
+assert.equal(recommendNotices([recNotice('a','일반 안내')], [recEntity], recKeys, recNow).length, 0);
+console.log('recommendation boundaries and Korea dates passed');

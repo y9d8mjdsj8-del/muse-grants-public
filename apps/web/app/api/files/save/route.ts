@@ -1,3 +1,4 @@
+import { normalizeSupabaseUrl } from "@/lib/supabase-url";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { storageKey, typeOf } from "@/lib/fileTypes";
@@ -16,7 +17,7 @@ const ALLOW = /(^|\.)(or\.kr|go\.kr|re\.kr|ac\.kr|kr)$/i;
 const UA = "Mozilla/5.0 (compatible; MUSE-Grants/0.5; saving an attachment for a signed-in user)";
 
 export async function POST(req: Request) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const schema = process.env.NEXT_PUBLIC_SUPABASE_SCHEMA || "grants";
   if (!url || !anon) return NextResponse.json({ error: "클라우드가 연결되지 않았어요" }, { status: 400 });

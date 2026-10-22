@@ -37,12 +37,14 @@ export function extraTags(title: string, source?: string): string[] {
 }
 
 /** 분야는 지원 자격 판정이 아닌 검색용 분류이며 여러 분야에 동시에 속할 수 있다. */
-export const BUSINESS_TOPICS = ["뷰티", "코트라", "수출바우처", "예경", "문체부", "박람회 지원", "기업부설연구소", "디자인", "여성기업"] as const;
+export const BUSINESS_TOPICS = ["뷰티", "코트라", "수출바우처", "대출·융자", "자금지원", "예경", "문체부", "박람회 지원", "기업부설연구소", "디자인", "여성기업"] as const;
 export type BusinessTopic = typeof BUSINESS_TOPICS[number];
 const TOPIC_RULES: [BusinessTopic, RegExp][] = [
   ["뷰티", /뷰티|화장품|미용|코스메틱|cosmetic|beauty/i],
   ["코트라", /코트라|KOTRA|대한무역투자진흥공사/i],
   ["수출바우처", /수출\s*바우처|수출\s*지원\s*기반\s*활용|export\s*voucher/i],
+  ["대출·융자", /대출|융자|정책\s*자금|운전\s*자금|시설\s*자금|특례\s*보증|신용\s*보증|이차\s*보전/],
+  ["자금지원", /자금\s*지원|지원\s*자금|지원금|보조금|사업비\s*지원|사업화\s*지원|이차\s*보전|이자\s*지원/],
   ["예경", /예술경영지원센터|아트코리아랩|예경/],
   ["문체부", /문화체육관광부|문체부/],
   ["박람회 지원", /박람회|전시회|해외\s*전시|공동관|한국관|부스|엑스포|\bexpo\b|trade\s*fair/i],

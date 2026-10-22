@@ -8,6 +8,10 @@ on:
         description: '발송 없이 점검'
         type: boolean
         default: true
+      test_email:
+        description: '연결 테스트 메일 (실제 발송하려면 발송 없이 점검을 해제)'
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -15,7 +19,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   digest:
-    if: vars.EMAIL_DIGEST_ENABLED == 'true'
+    if: vars.EMAIL_DIGEST_ENABLED == 'true' || inputs.test_email == true
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -26,12 +30,19 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @muse/collectors exec tsx test/digest.test.ts
       - run: |
-          if [ "$DRY_RUN" = "true" ]; then
+          if [ "$TEST_EMAIL" = "true" ]; then
+            if [ "$DRY_RUN" = "true" ]; then
+              pnpm --filter @muse/collectors exec tsx src/send-digest.ts --test --dry
+            else
+              pnpm --filter @muse/collectors exec tsx src/send-digest.ts --test
+            fi
+          elif [ "$DRY_RUN" = "true" ]; then
             pnpm --filter @muse/collectors exec tsx src/send-digest.ts --dry
           else
             pnpm --filter @muse/collectors exec tsx src/send-digest.ts
           fi
         env:
+          TEST_EMAIL: ${{ inputs.test_email }}
           DRY_RUN: ${{ inputs.dry_run }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

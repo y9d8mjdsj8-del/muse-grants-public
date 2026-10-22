@@ -1,9 +1,10 @@
 "use client";
-import type { Entity } from "@muse/core";
+import { BUSINESS_TOPICS, type BusinessTopic, type Entity } from "@muse/core";
 import { Button, cx, Sheet } from "./ui";
 
 export type Sort = "deadline" | "fit" | "recent";
 export interface Filters {
+  topic?: BusinessTopic | "all";
   region: string;
   entity: string;
   overseas: boolean;
@@ -19,9 +20,23 @@ export interface Filters {
 }
 export const DEFAULT_FILTERS: Filters = { region: "all", entity: "all", overseas: false, domestic: false, regionOk: false, saved: false, showClosed: false, sort: "deadline" };
 export const activeCount = (f: Filters) =>
-  (f.region !== "all" ? 1 : 0) + (f.entity !== "all" ? 1 : 0) + (f.overseas ? 1 : 0) + (f.domestic ? 1 : 0) + (f.regionOk ? 1 : 0) + (f.startup && f.startup !== "all" ? 1 : 0) + (f.saved ? 1 : 0) + (f.showClosed ? 1 : 0);
+  (f.topic && f.topic !== "all" ? 1 : 0) + (f.region !== "all" ? 1 : 0) + (f.entity !== "all" ? 1 : 0) + (f.overseas ? 1 : 0) + (f.domestic ? 1 : 0) + (f.regionOk ? 1 : 0) + (f.startup && f.startup !== "all" ? 1 : 0) + (f.saved ? 1 : 0) + (f.showClosed ? 1 : 0);
 
 const SORTS: [Sort, string][] = [["deadline", "마감 임박순"], ["fit", "적합도순"], ["recent", "최신순"]];
+
+/** Visible on desktop and mobile, independently of the existing notice-kind tabs. */
+export function TopicFilters({ f, set }: { f: Filters; set(f: Filters): void }) {
+  return <section aria-label="사업 분야" className="mt-4 rounded-xl border border-line bg-surface p-3">
+    <p className="text-[13px] font-bold mb-2">사업 분야</p>
+    <div className="flex flex-wrap gap-2">
+      <Chip on={!f.topic || f.topic === "all"} onClick={() => set({ ...f, topic: "all" })}>전체 분야</Chip>
+      {BUSINESS_TOPICS.map((topic) => <Chip key={topic} on={f.topic === topic} onClick={() => set({ ...f, topic: f.topic === topic ? "all" : topic })}>{topic}</Chip>)}
+    </div>
+    <p className="text-[12px] text-mute mt-2">분야 분류는 지원 자격 판정이 아니에요. 개인사업자 가능 여부, 소재지, 여성기업 확인서·연구소 보유 요건은 원문에서 확인해 주세요.</p>
+    {f.topic === "기업부설연구소" && <p className="text-[12px] text-mute mt-1">연구소 설립·연구개발 공고를 함께 보여요. 연구소가 없어도 검토할 수 있는 사업이 있으니 개별 요건을 확인해 주세요.</p>}
+    {f.topic === "여성기업" && <p className="text-[12px] text-mute mt-1">확인서가 필요한 사업과 여성 창업·교육 공고를 함께 보여요. 확인서 미보유만으로 공고를 숨기지 않아요.</p>}
+  </section>;
+}
 
 function Chip({ on, children, onClick }: { on: boolean; children: React.ReactNode; onClick(): void }) {
   return (

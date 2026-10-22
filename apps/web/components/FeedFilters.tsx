@@ -28,6 +28,8 @@ const SORTS: [Sort, string][] = [["deadline", "마감 임박순"], ["fit", "적�
 export function TopicFilters({ f, set }: { f: Filters; set(f: Filters): void }) {
   return <section aria-label="사업 분야" className="mt-4 rounded-xl border border-line bg-surface p-3">
     <p className="text-[13px] font-bold mb-2">사업 분야</p>
+    {f.topic === "대출·융자" && <p className="text-[12px] text-mute mb-2">대출·정책자금·보증 관련 공고예요. 상환 의무, 금리, 보증료, 담보·심사 조건과 개인사업자·지역 요건을 원문에서 확인해 주세요.</p>}
+    {f.topic === "자금지원" && <p className="text-[12px] text-mute mb-2">보조금·사업비·이자 지원 등을 모아요. 융자가 함께 포함될 수 있으며, 무상지원이나 선정 가능을 뜻하지 않아요. 상환 여부, 자부담, 정산·환수 조건을 원문에서 확인해 주세요.</p>}
     <div className="flex flex-wrap gap-2">
       <Chip on={!f.topic || f.topic === "all"} onClick={() => set({ ...f, topic: "all" })}>전체 분야</Chip>
       {BUSINESS_TOPICS.map((topic) => <Chip key={topic} on={f.topic === topic} onClick={() => set({ ...f, topic: f.topic === topic ? "all" : topic })}>{topic}</Chip>)}

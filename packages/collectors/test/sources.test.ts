@@ -181,3 +181,19 @@ for (const keyword of ['수출바우처', '수출지원기반활용', '대출', 
 }
 assert(fetched.every((u) => new URL(u).searchParams.get('condition1') === 'AND'));
 console.log('business sources and topic tests passed');
+
+const { selectedTopics, matchesTopicSelection, TOPIC_GROUPS } = await import('@muse/core');
+assert.deepEqual(selectedTopics({ topic: '디자인' }), ['디자인'], '기존 단일 필터 복원');
+assert.deepEqual(selectedTopics({ topic: '디자인', topics: [] }), [], '명시적 초기화가 구형 값보다 우선');
+assert.deepEqual(selectedTopics({ topics: ['디자인', '디자인'] }), ['디자인']);
+assert.deepEqual(TOPIC_GROUPS.flatMap((g) => g.topics).sort(), [...BUSINESS_TOPICS].sort(), '각 분류는 한 묶음에만 속한다');
+const designNotice = { title: '화장품 패키징 디자인 지원', org: '일반기관' };
+assert(matchesTopicSelection(designNotice, { topics: ['디자인', '대출·융자'] }), '같은 목적 묶음은 OR');
+assert(matchesTopicSelection(designNotice, { topics: ['디자인', '뷰티'] }), '다른 묶음은 AND');
+assert(!matchesTopicSelection(designNotice, { topics: ['디자인', '코트라'] }));
+assert(matchesTopicSelection(designNotice, {}));
+assert.deepEqual(businessTopics({ title: '향료 개발', org: '' }), ['뷰티']);
+assert.deepEqual(businessTopics({ title: '예술가와 기업의 협업', org: '' }), ['예술·브랜드 협업']);
+assert.deepEqual(businessTopics({ title: '단독 작가 공모', org: '' }), []);
+assert.deepEqual(businessTopics({ title: '일반 물류 협업', org: '' }), []);
+console.log('grouped discovery filters passed');

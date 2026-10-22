@@ -20,6 +20,10 @@ const BIZ = "https://www.bizinfo.go.kr";
 export const BUSINESS_SEARCHES = [
   ["searchPblancNm", "뷰티"], ["searchPblancNm", "화장품"],
   ["searchPblancNm", "수출바우처"], ["searchPblancNm", "수출지원기반활용"],
+  ["searchPblancNm", "대출"], ["searchPblancNm", "융자"], ["searchPblancNm", "정책자금"],
+  ["searchPblancNm", "특례보증"], ["searchPblancNm", "신용보증"], ["searchPblancNm", "이차보전"],
+  ["searchPblancNm", "자금"], ["searchPblancNm", "지원금"], ["searchPblancNm", "보조금"],
+  ["searchPblancNm", "사업비 지원"], ["searchPblancNm", "사업화 지원"], ["searchPblancNm", "이자 지원"],
   ["searchExcInsttNm", "대한무역투자진흥공사"], ["searchExcInsttNm", "예술경영지원센터"],
   ["pldirJrsdCodeNm", "문화체육관광부"], ["searchPblancNm", "박람회"], ["searchPblancNm", "전시회"],
   ["CONTS", "기업부설연구소"], ["searchPblancNm", "연구개발"], ["searchPblancNm", "디자인"],

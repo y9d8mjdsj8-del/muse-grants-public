@@ -1,10 +1,11 @@
 "use client";
-import { BUSINESS_TOPICS, type BusinessTopic, type Entity } from "@muse/core";
+import { TOPIC_GROUPS, TOPIC_LABELS, selectedTopics, type BusinessTopic, type Entity } from "@muse/core";
 import { Button, cx, Sheet } from "./ui";
 
 export type Sort = "deadline" | "fit" | "recent";
 export interface Filters {
   topic?: BusinessTopic | "all";
+  topics?: BusinessTopic[];
   region: string;
   entity: string;
   overseas: boolean;
@@ -20,24 +21,43 @@ export interface Filters {
 }
 export const DEFAULT_FILTERS: Filters = { region: "all", entity: "all", overseas: false, domestic: false, regionOk: false, saved: false, showClosed: false, sort: "deadline" };
 export const activeCount = (f: Filters) =>
-  (f.topic && f.topic !== "all" ? 1 : 0) + (f.region !== "all" ? 1 : 0) + (f.entity !== "all" ? 1 : 0) + (f.overseas ? 1 : 0) + (f.domestic ? 1 : 0) + (f.regionOk ? 1 : 0) + (f.startup && f.startup !== "all" ? 1 : 0) + (f.saved ? 1 : 0) + (f.showClosed ? 1 : 0);
+  selectedTopics(f).length + (f.region !== "all" ? 1 : 0) + (f.entity !== "all" ? 1 : 0) + (f.overseas ? 1 : 0) + (f.domestic ? 1 : 0) + (f.regionOk ? 1 : 0) + (f.startup && f.startup !== "all" ? 1 : 0) + (f.saved ? 1 : 0) + (f.showClosed ? 1 : 0);
 
 const SORTS: [Sort, string][] = [["deadline", "마감 임박순"], ["fit", "적합도순"], ["recent", "최신순"]];
 
-/** Visible on desktop and mobile, independently of the existing notice-kind tabs. */
-export function TopicFilters({ f, set }: { f: Filters; set(f: Filters): void }) {
-  return <section aria-label="사업 분야" className="mt-4 rounded-xl border border-line bg-surface p-3">
-    <p className="text-[13px] font-bold mb-2">사업 분야</p>
-    {f.topic === "대출·융자" && <p className="text-[12px] text-mute mb-2">대출·정책자금·보증 관련 공고예요. 상환 의무, 금리, 보증료, 담보·심사 조건과 개인사업자·지역 요건을 원문에서 확인해 주세요.</p>}
-    {f.topic === "자금지원" && <p className="text-[12px] text-mute mb-2">보조금·사업비·이자 지원 등을 모아요. 융자가 함께 포함될 수 있으며, 무상지원이나 선정 가능을 뜻하지 않아요. 상환 여부, 자부담, 정산·환수 조건을 원문에서 확인해 주세요.</p>}
-    <div className="flex flex-wrap gap-2">
-      <Chip on={!f.topic || f.topic === "all"} onClick={() => set({ ...f, topic: "all" })}>전체 분야</Chip>
-      {BUSINESS_TOPICS.map((topic) => <Chip key={topic} on={f.topic === topic} onClick={() => set({ ...f, topic: f.topic === topic ? "all" : topic })}>{topic}</Chip>)}
+/** Purpose first; optional details narrow the selection without hiding active filters. */
+export function TopicFilters({ f, set, resultCount = 0 }: { f: Filters; set(f: Filters): void; resultCount?: number }) {
+  const selected = selectedTopics(f);
+  const label = (t: BusinessTopic) => TOPIC_LABELS[t] ?? t;
+  const toggle = (t: BusinessTopic) => set({ ...f, topic: "all", topics: selected.includes(t) ? selected.filter((x) => x !== t) : [...selected, t] });
+  const chips = (topics: BusinessTopic[]) => <div className="flex flex-wrap gap-2">{topics.map((t) => <Chip key={t} on={selected.includes(t)} onClick={() => toggle(t)}>{label(t)}</Chip>)}</div>;
+  const detailCount = selected.filter((t) => !TOPIC_GROUPS[0].topics.includes(t)).length;
+  return <section aria-label="맞춤 공고 찾기" className="mt-4 rounded-xl border border-line bg-surface p-4">
+    <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
+      <h2 className="text-[15px] font-bold">어떤 지원이 필요한가요?</h2>
+      <span role="status" className="text-[13px] text-mute">현재 조건 {resultCount}건</span>
     </div>
-    <p className="text-[12px] text-mute mt-2">분야 분류는 지원 자격 판정이 아니에요. 개인사업자 가능 여부, 소재지, 여성기업 확인서·연구소 보유 요건은 원문에서 확인해 주세요.</p>
-    {f.topic === "기업부설연구소" && <p className="text-[12px] text-mute mt-1">연구소 설립·연구개발 공고를 함께 보여요. 연구소가 없어도 검토할 수 있는 사업이 있으니 개별 요건을 확인해 주세요.</p>}
-    {f.topic === "여성기업" && <p className="text-[12px] text-mute mt-1">확인서가 필요한 사업과 여성 창업·교육 공고를 함께 보여요. 확인서 미보유만으로 공고를 숨기지 않아요.</p>}
-    {f.topic === "수출바우처" && <p className="text-[12px] text-mute mt-1">수출 실적만으로 지원 가능 여부가 확정되지는 않아요. 공고의 실적 기준연도·인정금액·증빙, 업종, 기업 규모, 자부담과 중복지원 조건을 확인해 주세요.</p>}
+    <p className="text-[12px] text-mute mb-3">필요한 지원을 여러 개 골라도 돼요. 기관이나 업종은 아래에서 좁힐 수 있어요.</p>
+    {chips(TOPIC_GROUPS[0].topics)}
+    <details className="mt-3 border-t border-line pt-3">
+      <summary className="cursor-pointer text-[13px] font-semibold">관심 분야·기관·대상 더 보기{detailCount > 0 ? ` · ${detailCount}개 선택` : ""}</summary>
+      {TOPIC_GROUPS.slice(1).map((g) => <div key={g.id} className="mt-3"><h3 className="text-[12px] font-semibold text-mute mb-2">{g.label}</h3>{chips(g.topics)}</div>)}
+      <p className="text-[12px] text-mute mt-3">같은 묶음에서는 하나라도 맞으면 표시하고, 다른 묶음끼리는 모두 맞는 공고를 보여요.</p>
+    </details>
+    {selected.length > 0 && <div className="mt-3 border-t border-line pt-3">
+      <div className="flex flex-wrap items-center gap-2" aria-label="선택한 조건"><span className="text-[12px] text-mute">선택한 조건</span>
+        {selected.map((t) => <button key={t} aria-label={`${label(t)} 조건 해제`} onClick={() => toggle(t)} className="text-[12px] rounded-full border border-line px-3 py-2">{label(t)} ×</button>)}
+        <button onClick={() => set({ ...f, topic: "all", topics: [] })} className="text-[12px] underline underline-offset-2">지원 조건 초기화</button>
+      </div>
+      {resultCount === 0 && <p className="text-[12px] text-mute mt-2">조건을 하나씩 해제하거나 검색·지역 조건을 넓혀 보세요.</p>}
+    </div>}
+    <p className="text-[12px] text-mute mt-3">공고를 찾기 위한 분류예요. 지원 자격은 개인사업자·지역·서류 요건을 원문에서 확인해 주세요.</p>
+    {selected.includes("대출·융자") && <p className="text-[12px] text-mute mt-1">대출·보증은 상환, 금리·보증료 및 심사 조건을 확인해 주세요.</p>}
+    {selected.includes("자금지원") && <p className="text-[12px] text-mute mt-1">자금지원에 융자가 포함될 수 있어요. 상환 여부·자부담·정산·환수 조건을 확인해 주세요.</p>}
+    {selected.includes("여성기업") && <p className="text-[12px] text-mute mt-1">여성기업 확인서가 없어도 공고를 볼 수 있어요. 발급 필수 여부는 별도 확인이 필요해요.</p>}
+    {selected.includes("기업부설연구소") && <p className="text-[12px] text-mute mt-1">연구소 설립과 연구개발 공고를 함께 보여요. 연구소 보유가 필수인지는 원문에서 확인해 주세요.</p>}
+    {selected.includes("수출바우처") && <p className="text-[12px] text-mute mt-1">수출 실적 기준연도·인정금액·증빙과 중복지원 조건을 확인해 주세요.</p>}
+    {selected.includes("예술·브랜드 협업") && <p className="text-[12px] text-mute mt-1">예술 관련 협업 키워드가 있는 공고예요. 기업·파트너·컨소시엄 참여 가능 여부는 원문에서 확인해 주세요.</p>}
   </section>;
 }
 
